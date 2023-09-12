@@ -10,7 +10,7 @@ Currently, the interpreter implements a 32,768 byte memory tape with 8-bit cells
 
 ## Usage
 
-To run a Brainf*ck program, execute the following command (Linux):
+To run a Brainf*ck program, compile cbfi.c and run the executable with the .bf file as a command-line argument. For Linux, this might look like the following:
 
 ``` bash
 ./cbfi [FILENAME.bf]
