@@ -6,7 +6,7 @@ An interpreter written in C for the esoteric programming language [Brainf*ck](ht
 
 ## Specifications
 
-- Memory tape with 32,768 one-byte cells, all initialized to 0.
+- 32,768 cell memory tape with 8-bit unsigned values, all initialized to 0.
 - The values of the cells wrap around upon exceeding the maximum or minimum value.
 - The instruction pointer wraps around when it reaches past the allocated memory tape.
 - Input and output use ASCII character encoding.
