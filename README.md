@@ -1,4 +1,4 @@
-# cbfi v1.0.0
+# cbfi
 
 ## About
 
