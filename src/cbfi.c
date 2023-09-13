@@ -19,6 +19,7 @@ int g_error = 0;            // true if an error has occured
 
 void execute_command(char command);
 void print_error(char *file_name, char *type, char *message);
+void print_description(char *run_command);
 
 /* Interpret and execute Brainf*ck program. */
 int main(int argc, char *argv[])
@@ -26,12 +27,7 @@ int main(int argc, char *argv[])
     int i;
     char command;
 
-    printf("\n");
-    printf("=== cbfi v1.0.0 ===\n");
-    printf("An interpreter written in C for the esoteric programming language Brainf*ck\n");
-    printf("Written by Andrew Harabor, https://github.com/andrewharabor/cbfi\n");
-    printf("Usage: %s [FILENAME.bf]\n", argv[0]);
-    printf("\n");
+    print_description(argv[0]);
 
     if (argc != 2)
     {
@@ -191,6 +187,27 @@ void print_error(char *file_name, char *type, char *message)
 {
     fprintf(stderr, "%s: %s: %s\n", file_name, type, message);
     g_error = 1;
+
+    return;
+}
+
+
+/* Print a short description about the interpreter. */
+void print_description(char *run_command)
+{
+    fprintf(stdout, "\n");
+    fprintf(stdout, "           .o8        .o88o.  o8o\n");
+    fprintf(stdout, "          \"888        888 `\"  `\"'\n");
+    fprintf(stdout, " .ooooo.   888oooo.  o888oo  oooo\n");
+    fprintf(stdout, "d88' `\"Y8  d88' `88b  888    `888\n");
+    fprintf(stdout, "888        888   888  888     888\n");
+    fprintf(stdout, "888   .o8  888   888  888     888\n");
+    fprintf(stdout, "`Y8bod8P'  `Y8bod8P' o888o   o888o\n");
+    fprintf(stdout, "\n");
+    fprintf(stdout, "An interpreter written in C for the esoteric programming language Brainf*ck.\n");
+    fprintf(stdout, "Written by Andrew Harabor, https://github.com/andrewharabor/cbfi\n");
+    fprintf(stdout, "Usage: %s [FILENAME.bf]\n", run_command);
+    fprintf(stdout, "\n");
 
     return;
 }
