@@ -105,17 +105,11 @@ void execute_command(char command)
     }
     else if (command == '+')
     {
-        if (g_cells[g_data_ptr]++ == 255)
-        {
-            g_cells[g_data_ptr] = 0;
-        }
+        g_cells[g_data_ptr]++;
     }
     else if (command == '-')
     {
-        if (g_cells[g_data_ptr]-- == 0)
-        {
-            g_cells[g_data_ptr] = 255;
-        }
+        g_cells[g_data_ptr]--;
     }
     else if (command == '.')
     {
