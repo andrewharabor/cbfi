@@ -176,7 +176,7 @@ void execute_command(char command)
     return;
 }
 
-/* Print "`file_name`: `type`: `message` to `stderr`."" */
+/* Print "`file_name`: `type`: `message` to `stderr`". */
 void print_error(char *file_name, char *type, char *message)
 {
     fprintf(stderr, "%s: %s: %s\n", file_name, type, message);
