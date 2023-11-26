@@ -103,85 +103,86 @@ void execute_command(char command)
 {
     uint64_t balance, open_idx, close_idx, i;
     char skipped;
-    byte_t input;
 
-    if (command == '>')
+    switch (command)
     {
-        if (g_data_ptr++ == CELL_COUNT - 1)
-        {
-            g_data_ptr = 0;
-        }
-    }
-    else if (command == '<')
-    {
-        if (g_data_ptr-- == 0)
-        {
-            g_data_ptr = CELL_COUNT - 1;
-        }
-    }
-    else if (command == '+')
-    {
-        g_cells[g_data_ptr]++;
-    }
-    else if (command == '-')
-    {
-        g_cells[g_data_ptr]--;
-    }
-    else if (command == '.')
-    {
-        fprintf(stdout, "%c", g_cells[g_data_ptr]);
-    }
-    else if (command == ',')
-    {
-        fscanf(stdin, "%c", &input);
-        g_cells[g_data_ptr] = input;
-    }
-    else if (command == '[')
-    {
-        balance = 1;
-        open_idx = g_src_idx;
-
-        // Find index of the closing bracket
-        i = open_idx + 1;
-        for (i = open_idx + 1; i < g_src_len; i++)
-        {
-            if ((skipped = g_src_chars[i]) == '\0')
+        case '>':
+            if (g_data_ptr++ == CELL_COUNT - 1)
             {
-                print_error(stderr, 4, g_src_file_name, "SYNTAX ERROR", "unmatched opening bracket");
-
-                return;
+                g_data_ptr = 0;
             }
+            break;
 
-            if (skipped == '[')
+        case '<':
+            if (g_data_ptr-- == 0)
             {
-                balance++;
+                g_data_ptr = CELL_COUNT - 1;
             }
-            else if (skipped == ']')
+            break;
+
+        case '+':
+            g_cells[g_data_ptr]++;
+            break;
+
+        case '-':
+            g_cells[g_data_ptr]--;
+            break;
+
+        case '.':
+            fprintf(stdout, "%c", g_cells[g_data_ptr]);
+            break;
+
+        case ',':
+            fscanf(stdin, "%c", &g_cells[g_data_ptr]);
+            break;
+
+        case '[':
+            balance = 1;
+            open_idx = g_src_idx;
+
+            // Find index of the closing bracket
+            i = open_idx + 1;
+            for (i = open_idx + 1; i < g_src_len; i++)
             {
-                if (--balance == 0)
+                if ((skipped = g_src_chars[i]) == '\0')
                 {
-                    close_idx = i;
-                    break;
+                    print_error(stderr, 4, g_src_file_name, "SYNTAX ERROR", "unmatched opening bracket");
+
+                    return;
+                }
+
+                if (skipped == '[')
+                {
+                    balance++;
+                }
+                else if (skipped == ']')
+                {
+                    if (--balance == 0)
+                    {
+                        close_idx = i;
+                        break;
+                    }
                 }
             }
-        }
 
-        // Execute the commands within the matching brackets if applicable
-        while (g_cells[g_data_ptr] != 0)
-        {
-            for (g_src_idx = open_idx + 1; g_src_idx < close_idx; g_src_idx++)
+            // Execute the commands within the matching brackets
+            while (g_cells[g_data_ptr] != 0)
             {
-                execute_command(g_src_chars[g_src_idx]);
+                for (g_src_idx = open_idx + 1; g_src_idx < close_idx; g_src_idx++)
+                {
+                    execute_command(g_src_chars[g_src_idx]);
+                }
             }
-        }
+            g_src_idx = close_idx;
 
-        g_src_idx = close_idx;
-    }
-    else if (command == ']') // Matching brackets are handled together
-    {
-        print_error(stderr, 4, g_src_file_name, "SYNTAX ERROR", "unmatched closing bracket");
+            break;
 
-        return;
+        case ']': // Matching brackets are handled together so this means the opening bracket is missing
+            print_error(stderr, 4, g_src_file_name, "SYNTAX ERROR", "unmatched closing bracket");
+            break;
+
+        default:
+            break;
     }
 
     return;
