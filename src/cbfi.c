@@ -10,44 +10,52 @@ typedef uint8_t byte_t;
 FILE *g_src_file;
 char *g_src_file_name;
 char *g_src_chars; // each character from the source file
-long g_src_len;
-int g_src_idx;
+uint64_t g_src_len;
+uint64_t g_src_idx;
 
 byte_t g_cells[CELL_COUNT]; // one-byte cells for manipulation
-int g_data_ptr = 0;         // instruction pointer (index of current cell)
-int g_error = 0;            // true if an error has occured
+uint16_t g_data_ptr = 0;         // instruction pointer (index of current cell)
 
 void execute_command(char command);
-void print_error(char *file_name, char *type, char *message);
-void print_description(char *run_command);
+void free_memory();
+void print_error(FILE *stream, uint8_t status, char *file_name, char *type, char *message);
+void print_description(FILE *stream, char *run_command);
+void print_usage(FILE *stream, char *run_command);
 
 /* Interpret and execute Brainf*ck program. */
 int main(int argc, char *argv[])
 {
-    int i;
+    uint8_t i;
     char command;
 
-    print_description(argv[0]);
-
-    if (argc != 2)
+    if (argc < 2 || argc > 3)
     {
-        print_error(argv[0], "ARGUMENT ERROR", "incorrect number of command-line arguments");
+        print_usage(stderr, argv[0]);
+        print_error(stderr, 2, argv[0], "ARGUMENT ERROR", "invalid number of command-line arguments");
+    }
 
-        return g_error;
+    for (i = 1; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-h") == 0)
+        {
+            print_description(stdout, argv[0]);
+        }
+        else
+        {
+            g_src_file_name = malloc(sizeof(char) * strlen(argv[i]));
+            if (g_src_file_name == NULL)
+            {
+                print_error(stderr, 1, argv[0], "INTERNAL ERROR", "cannot allocate memory for Brainf*ck source file name");
+            }
+            strcpy(g_src_file_name, argv[i]);
+        }
     }
 
     // Open source file and read data
-    g_src_file_name = malloc(sizeof(char) * strlen(argv[1]));
-    strcpy(g_src_file_name, argv[1]);
-
     g_src_file = fopen(g_src_file_name, "r");
     if (g_src_file == NULL)
     {
-        print_error(g_src_file_name, "FILE ERROR", "cannot open file");
-
-        free(g_src_file_name);
-
-        return g_error;
+        print_error(stderr, 3, argv[0], "FILE ERROR", "Brainf*ck source file cannot be opened or is missing");
     }
 
     fseek(g_src_file, 0, SEEK_END);
@@ -55,6 +63,11 @@ int main(int argc, char *argv[])
     fseek(g_src_file, 0, SEEK_SET);
 
     g_src_chars = malloc(sizeof(char) * g_src_len);
+    if (g_src_file_name == NULL)
+    {
+        print_error(stderr, 1, argv[0], "INTERNAL ERROR", "cannot allocate memory for contents of Brainf*ck source file");
+    }
+
     fread(g_src_chars, g_src_len - 1, 1, g_src_file);
     fclose(g_src_file);
 
@@ -67,25 +80,28 @@ int main(int argc, char *argv[])
         }
 
         execute_command(command);
-        if (g_error)
-        {
-            free(g_src_file_name);
-            free(g_src_chars);
-
-            return g_error;
-        }
     }
 
     free(g_src_file_name);
     free(g_src_chars);
 
-    return 0;
+    if (ferror(stdin))
+    {
+        print_error(stderr, 3, argv[0], "FILE ERROR", "error reading from stdin");
+    }
+
+    if (ferror(stdout))
+    {
+        print_error(stderr, 3, argv[0], "FILE ERROR", "error writing to stdout");
+    }
+
+    exit(0);
 }
 
 /* Execute a Brainf*ck command. */
 void execute_command(char command)
 {
-    int balance, open_idx, close_idx, i;
+    uint64_t balance, open_idx, close_idx, i;
     char skipped;
     byte_t input;
 
@@ -131,7 +147,7 @@ void execute_command(char command)
         {
             if ((skipped = g_src_chars[i]) == '\0')
             {
-                print_error(g_src_file_name, "SYNTAX ERROR", "unmatched opening bracket");
+                print_error(stderr, 4, g_src_file_name, "SYNTAX ERROR", "unmatched opening bracket");
 
                 return;
             }
@@ -157,18 +173,13 @@ void execute_command(char command)
             {
                 execute_command(g_src_chars[g_src_idx]);
             }
-
-            if (g_error)
-            {
-                return;
-            }
         }
 
         g_src_idx = close_idx;
     }
     else if (command == ']') // Matching brackets are handled together
     {
-        print_error(g_src_file_name, "SYNTAX ERROR", "unmatched closing bracket");
+        print_error(stderr, 4, g_src_file_name, "SYNTAX ERROR", "unmatched closing bracket");
 
         return;
     }
@@ -176,32 +187,57 @@ void execute_command(char command)
     return;
 }
 
-/* Print "`file_name`: `type`: `message` to `stderr`". */
-void print_error(char *file_name, char *type, char *message)
+
+/* Free any memory allocated by `g_src_file_name` or `g_src_chars`. */
+void free_memory()
 {
-    fprintf(stderr, "%s: %s: %s\n", file_name, type, message);
-    g_error = 1;
+    if (g_src_file_name != NULL)
+    {
+        free(g_src_file_name);
+    }
+
+    if (g_src_chars != NULL)
+    {
+        free(g_src_chars);
+    }
 
     return;
 }
 
-
-/* Print a short description about the interpreter. */
-void print_description(char *run_command)
+/* Print "`file_name`: `type`: `message`" to `stream` and exit the program with return code `status`. */
+void print_error(FILE *stream, uint8_t status, char *file_name, char *type, char *message)
 {
-    fprintf(stdout, "\n");
-    fprintf(stdout, "           .o8        .o88o.  o8o\n");
-    fprintf(stdout, "          \"888        888 `\"  `\"'\n");
-    fprintf(stdout, " .ooooo.   888oooo.  o888oo  oooo\n");
-    fprintf(stdout, "d88' `\"Y8  d88' `88b  888    `888\n");
-    fprintf(stdout, "888        888   888  888     888\n");
-    fprintf(stdout, "888   .o8  888   888  888     888\n");
-    fprintf(stdout, "`Y8bod8P'  `Y8bod8P' o888o   o888o\n");
-    fprintf(stdout, "\n");
-    fprintf(stdout, "An interpreter written in C for the esoteric programming language Brainf*ck.\n");
-    fprintf(stdout, "Written by Andrew Harabor, https://github.com/andrewharabor/cbfi\n");
-    fprintf(stdout, "Usage: %s [FILENAME.bf]\n", run_command);
-    fprintf(stdout, "\n");
+    free_memory();
+    fprintf(stream, "%s: %s: %s\n", file_name, type, message);
+    exit(status);
+
+    return;
+}
+
+/* Print a short description about the interpreter to `stream`. */
+void print_description(FILE *stream, char *run_command)
+{
+    fprintf(stream, "\n");
+    fprintf(stream, "           .o8        .o88o.  o8o\n");
+    fprintf(stream, "          \"888        888 `\"  `\"'\n");
+    fprintf(stream, " .ooooo.   888oooo.  o888oo  oooo\n");
+    fprintf(stream, "d88' `\"Y8  d88' `88b  888    `888\n");
+    fprintf(stream, "888        888   888  888     888\n");
+    fprintf(stream, "888   .o8  888   888  888     888\n");
+    fprintf(stream, "`Y8bod8P'  `Y8bod8P' o888o   o888o\n");
+    fprintf(stream, "\n");
+    fprintf(stream, "An interpreter written in C for the esoteric programming language Brainf*ck.\n");
+    fprintf(stream, "Written by Andrew Harabor, https://github.com/andrewharabor/cbfi\n\n");
+    print_usage(stream, run_command);
+    fprintf(stream, "\n");
+
+    return;
+}
+
+/* Print the usage message about the interpreter to `stream`. */
+void print_usage(FILE *stream, char *run_command)
+{
+    fprintf(stream, "USAGE: %s [-h] file.bf\n    -h: print a short description about the interpreter\n    file.bf: the Brainf*ck program to interpret and execute\n", run_command);
 
     return;
 }
