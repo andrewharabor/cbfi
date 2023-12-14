@@ -5,15 +5,13 @@
 
 #define CELL_COUNT 32768
 
-typedef uint8_t byte_t;
-
 FILE *g_src_file;
 char *g_src_file_name;
 char *g_src_chars; // each character from the source file
 uint64_t g_src_len;
 uint64_t g_src_idx;
 
-byte_t g_cells[CELL_COUNT]; // one-byte cells for manipulation
+uint8_t g_cells[CELL_COUNT]; // one-byte cells for manipulation
 uint16_t g_data_ptr = 0;    // instruction pointer (index of current cell)
 
 void execute_command(char command);
